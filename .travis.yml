@@ -7,7 +7,7 @@ before_install:
   - docker build -f ./client/development.Dockerfile -t douglira/test-webapp ./client
 
 script:
-  - docker run -e CI=true douglira/test-webapp
+  - docker run -e CI=true douglira/test-webapp npm run test
 
 after_success:
   - docker build -t douglira/multi-webapp ./client
