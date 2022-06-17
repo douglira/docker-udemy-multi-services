@@ -1,0 +1,70 @@
+version: '3'
+services:
+  postgres:
+    image: 'postgres:latest'
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=dockercompose
+      - POSTGRES_USER=douglira
+      - POSTGRES_DB=docker-udemy-multi-services
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+
+  redis:
+    image: 'redis:latest'
+    restart: always
+
+  api:
+    build: 
+      context: ./server
+      dockerfile: development.Dockerfile
+    restart: always
+    volumes:
+      - /app/node_modules
+      - ./server:/app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PGUSER=douglira
+      - PGHOST=postgres
+      - PGDATABASE=docker-udemy-multi-services
+      - PGPASSWORD=dockercompose
+      - PGPORT=5432
+
+  worker:
+    build: 
+      context: ./worker
+      dockerfile: development.Dockerfile
+    restart: always
+    volumes:
+      - /app/node_modules
+      - ./worker:/app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  webapp:
+    build: 
+      context: ./client
+      dockerfile: development.Dockerfile
+    volumes:
+      - /app/node_modules
+      - ./client:/app
+    environment:
+      - WDS_SOCKET_PORT=0
+
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: development.Dockerfile
+    restart: always
+    depends_on:
+      - api
+      - webapp
+    ports:
+      - 6001:80
+    
