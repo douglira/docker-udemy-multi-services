@@ -1,0 +1,36 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -f ./client/development.Dockerfile -t douglira/docker-multi-services-webapp .
+
+script:
+  - docker run -e CI=true douglira/docker-multi-services-webapp
+
+after_success:
+  - docker build -t douglira/multi-webapp ./client
+  - docker build -t douglira/multi-nginx ./nginx
+  - docker build -t douglira/multi-server ./server
+  - docker build -t douglira/multi-worker ./worker
+
+  - echo "$DOCKER_PASS" | docker login -u "DOCKER_USER" --password-stdin
+
+  - docker push douglira/multi-webapp
+  - docker push douglira/multi-nginx
+  - docker push douglira/multi-server
+  - docker push douglira/multi-worker
+
+
+deploy:
+  provider: elasticbeanstalk
+  access_key_id: "$AWS_KEY_ID"
+  secret_access_key: "$AWS_SECRET_KEY"
+  region: "us-east-1"
+  app: "docker-multi-services"
+  env: "Dockermultiservices-env"
+  bucket_name: "elasticbeanstalk-us-east-1-702694290822"
+  bucket_path: "docker-multi-services"
+  on:
+    branch: main
